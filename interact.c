@@ -52,13 +52,10 @@ void die( const char *s ) {
 
 void disableRawMode() {
 	if( tcsetattr(STDIN_FILENO, TCSAFLUSH, &E.orig_termios ) == -1 ) die( "tcsetattr" );
-
-	//tcsetattr( STDIN_FILENO, TCSAFLUSH, &orig_termios );
 }
 
 
 void enableRawMode() {
-	//tcgetattr( STDIN_FILENO, &orig_termios );
 	if( tcgetattr(STDIN_FILENO, &E.orig_termios ) == -1 ) die( "tcgetattr" ); 
 	atexit( disableRawMode );
 	struct termios raw = E.orig_termios;
@@ -130,26 +127,18 @@ int editorReadKey() {
 int getCursorPosition( int *rows, int *cols ) {
 	char buf[32];
 	unsigned int i = 0;
+	
 	if( write(STDOUT_FILENO, "\x1b[6n", 4 ) != 4 ) return -1;
-	printf( "\r\n" );
-	char c;
-	//while( read( STDIN_FILENO, &c, 1 ) == 1 ) {
-	//	if( iscntrl( c ) ) {
-	//		printf( "%d\r\n", c );
-	//	}
-	//	else {
-	//		printf( "%d ('%c')\r\n", c, c );
-	//	}
-	//}
+
 	while( i < sizeof( buf ) - 1 ) {
 		if( read( STDIN_FILENO, &buf[i], 1 ) != 1 ) break;
 		if( buf[i] == 'R' ) break;
 		i++;
 	}
+
 	buf[i] = '\0';
 	if( buf[0] != '\x1b' || buf[1] != '[' ) return -1;
 	if( sscanf( &buf[2], "%d;%d", rows, cols ) != 2 ) return -1;
-//	editorReadKey();
 	return 0;
 }
 
@@ -227,7 +216,6 @@ void editorDrawRows( struct abuf *ab ) {
 			char welcome[80];
 			int welcomelen = snprintf( welcome, sizeof( welcome ), "Abs Editor -- version %s", ABS_VERSION );
 			if( welcomelen > E.screencols ) welcomelen = E.screencols;
-			//abAppend( ab, welcome, welcomelen );
 			int padding = ( E.screencols - welcomelen ) / 2;
 			if( padding ) {
 				abAppend( ab,  "~", 1 );
@@ -245,7 +233,6 @@ void editorDrawRows( struct abuf *ab ) {
 			if ( len > E.screencols ) len = E.screencols;
 			abAppend( ab, E.row[y].chars, len );
 		}
-		//abAppend( ab, "~", 1 );
 		abAppend( ab, "\x1b[K", 3 );
 		if( y < E.screenrows - 1 ) {
 			abAppend( ab, "\r\n", 2 );
@@ -262,8 +249,6 @@ void editorRefreshScreen() {
 	char buf[32];
 	snprintf( buf, sizeof( buf ), "\x1b[%d;%dH", E.cy + 1, E.cx + 1 );
 	abAppend( &ab, buf, strlen( buf ) );
-
-	//abAppend( &ab, "\x1b[H", 3 );
 	abAppend( &ab, "\x1b[?25h", 6 );
 	write( STDOUT_FILENO, ab.b, ab.len );
 	abFree( &ab );
