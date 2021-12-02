@@ -1,1 +1,1 @@
-gcc interact.c -o program
+gcc abseditor.c -o program
