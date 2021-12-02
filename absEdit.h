@@ -4,6 +4,7 @@
 #define ABS_VERSION "0.0.1"
 
 enum editorKey {
+	BACKSPACE = 127,
 	ARROW_LEFT = 1000,
 	ARROW_RIGHT,
 	ARROW_UP,
@@ -31,6 +32,7 @@ struct editorConfig {
 	int screencols;
 	int numrows;
 	erow *row;
+	int dirty;
 	char *filename;
 	char statusmsg[80];
 	time_t statusmsg_time;
@@ -42,3 +44,7 @@ struct termios orig_termios;
 struct editorConfig E;
 
 #define ABUF_INIT { NULL, 0 }
+#define KILO_QUIT_TIMES 3;
+void editorSetStatusMessage( const char *fmt, ... );
+void editorRefreshScreen();
+char *editorPrompt( char *prompt );
