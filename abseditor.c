@@ -100,6 +100,19 @@ int editorRowCxToRx( erow *row, int cx ) {
 	return rx;
 }
 
+int editorRowRxToCx( erow *row, int rx ) {
+	int cur_rx = 0;
+	int cx;
+	for( cx = 0; cx < row -> size; cx++ ) {
+		if( row -> chars[cx] == '\t' ) {
+			cur_rx += ( ABS_TAB_STOP - 1 ) - ( cur_rx % ABS_TAB_STOP );
+		}
+		cur_rx++;
+		if( cur_rx > rx ) return cx;
+	}
+	return cx;
+}
+
 
 void editorUpdateRow( erow *row ) {
 	int tabs = 0;
@@ -297,6 +310,23 @@ void editorSave() {
 	}
 	free( buf );
 	editorSetStatusMessage( "Can't Save, error: %s", strerror(errno) );
+}
+
+void editorFind() {
+	char *query = editorPrompt( "Search: %s (ESC to cancel)");
+	if( query == NULL ) return;
+	int i;
+	for( i = 0; i < E.numrows; i++ ) {
+		erow *row = &E.row[i];
+		char *match = strstr( row -> render, query );
+		if( match ) {
+			E.cy = i;
+			E.cx = editorRowRxToCx( row, match - row -> render ); 
+			E.rowoff = E.numrows;
+			break;
+		}
+	}
+	free( query );
 }
 
 
@@ -500,6 +530,7 @@ void editorProcessKeypress() {
 		case '\r':
 			editorInsertNewLine();
 			break;
+			
 		case CTRL_KEY( 'q' ):
 			if( E.dirty && quit_times > 0 ) {
 				editorSetStatusMessage( "Warning: File has Unsaved changes, quit 2 more times to confirm", quit_times );
@@ -510,9 +541,11 @@ void editorProcessKeypress() {
 			write( STDOUT_FILENO, "\x1b[H", 3 );
 			exit( 0 );
 			break;
+
 		case CTRL_KEY( 's' ):
 			editorSave();
 			break;
+
 		case HOME_KEY:
 			E.cx = 0;
 			break;
@@ -521,13 +554,17 @@ void editorProcessKeypress() {
 		if( E.cy < E.numrows ) 
 			E.cx = E.row[E.cy].size;
 			break;
+
+		case CTRL_KEY( 'f' ):
+			editorFind();
+			break;
+
 		case BACKSPACE:
 		case CTRL_KEY( 'h' ):
 		case DEL_KEY:
 			if( c == DEL_KEY ) editorMoveCursor( ARROW_RIGHT );
 			editorDelChar();
 			break;
-
 
 		case PAGE_UP:
 		case PAGE_DOWN:
@@ -552,6 +589,7 @@ void editorProcessKeypress() {
 		case ARROW_RIGHT:
 			editorMoveCursor( c );
 			break;
+
 		case CTRL_KEY( 'l' ):
 		case '\x1b':
 			break;
@@ -586,7 +624,7 @@ int main( int argc, char *argv[] ) {
 		editorOpen( argv[1] );
 	}
 
-	editorSetStatusMessage( "Controls: Ctrl-S = Save | Ctrl-Q = Quit");
+	editorSetStatusMessage( "Controls: Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = Find");
 
 	while(1) {
 		editorRefreshScreen();		
