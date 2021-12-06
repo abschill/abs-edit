@@ -59,8 +59,8 @@ struct editorConfig E;
 
 #define ABUF_INIT { NULL, 0 }
 #define KILO_QUIT_TIMES 3;
-void editorSetStatusMessage( const char *fmt, ... );
-void editorRefreshScreen();
+void setStatusMessage( const char *fmt, ... );
+void refreshScreen();
 char *editorPrompt( char *prompt , void ( *callback )( char *, int ) );
 
 void die( const char *s ) {
