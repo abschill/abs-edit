@@ -61,7 +61,7 @@ struct editorConfig E;
 #define KILO_QUIT_TIMES 3;
 void editorSetStatusMessage( const char *fmt, ... );
 void editorRefreshScreen();
-char *editorPrompt( char *prompt );
+char *editorPrompt( char *prompt , void ( *callback )( char *, int ) );
 
 void die( const char *s ) {
 	write( STDOUT_FILENO, "\x1b[2J", 4 );
