@@ -1,3 +1,4 @@
+#pragma once
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -12,10 +13,10 @@
 #include <time.h>
 
 #define ABS_TAB_STOP 8
-#define CTRL_KEY( k ) ( ( k ) & 0x1f )
+#define C_KEY(k) (( k ) & 0x1f)
 #define ABS_VERSION "0.0.1"
-
-enum editorKey {
+// editor key (non insertion keys)
+enum editor_key {
 	BACKSPACE = 127,
 	ARROW_LEFT = 1000,
 	ARROW_RIGHT,
@@ -27,7 +28,7 @@ enum editorKey {
 	PAGE_UP,
 	PAGE_DOWN
 };
-
+// row in the editor
 typedef struct erow {
 	int size;
 	int rsize;
@@ -35,9 +36,8 @@ typedef struct erow {
 	char *render;
 } erow;
 
-
-
-struct editorConfig {
+//editor @runtime
+struct editor_config {
 	int cx, cy;
 	int rx;
 	int rowoff;
@@ -50,42 +50,69 @@ struct editorConfig {
 	char *filename;
 	char statusmsg[80];
 	time_t statusmsg_time;
-	struct termios orig_termios;
+	struct termios _term;
 };
 
-struct termios orig_termios;
+// to i buffer
+struct abuf {
+	char *b;
+	int len;
+};
 
-struct editorConfig E;
-
+struct termios _term;
+struct editor_config E;
 #define ABUF_INIT { NULL, 0 }
-#define KILO_QUIT_TIMES 3;
-void setStatusMessage( const char *fmt, ... );
-void refreshScreen();
-char *editorPrompt( char *prompt , void ( *callback )( char *, int ) );
+#define U_QUIT_TIMES 3;
+void set_status(const char *fmt, ... );
+void refresh_screen();
+char *editor_prompt(char *prompt , void (*callback)( char *, int));
 
-void die( const char *s ) {
-	write( STDOUT_FILENO, "\x1b[2J", 4 );
-	write( STDOUT_FILENO, "\x1b[H", 3 );
-	perror( s );
-	exit( 1 );
+void die(const char *s) {
+	write(STDOUT_FILENO, "\x1b[2J", 4);
+	write(STDOUT_FILENO, "\x1b[H", 3);
+	perror(s);
+	exit(1);
 }
 
-void disableRawMode() {
-	if( tcsetattr(STDIN_FILENO, TCSAFLUSH, &E.orig_termios ) == -1 ) die( "tcsetattr" );
+void disable_raw() {
+	if(tcsetattr(STDIN_FILENO, TCSAFLUSH, &E._term) == -1) die("disable_raw tcsetattr");
 }
 
-
-void enableRawMode() {
-	if( tcgetattr(STDIN_FILENO, &E.orig_termios ) == -1 ) die( "tcgetattr" ); 
-	atexit( disableRawMode );
-	struct termios raw = E.orig_termios;
+void enable_raw() {
+	if(tcgetattr(STDIN_FILENO, &E._term ) == -1) die("enable_raw tcgetattr");
+	atexit(disable_raw);
+	struct termios raw = E._term;
 	tcgetattr( STDIN_FILENO, &raw );
-	raw.c_iflag &= ~( BRKINT | ICRNL | ISTRIP | IXON );
-	raw.c_oflag &= ~( OPOST );
-	raw.c_cflag |= ( CS8 );
-	raw.c_lflag &= ~( ECHO | ICANON | IEXTEN | ISIG );
+	raw.c_iflag &= ~(BRKINT | ICRNL | ISTRIP | IXON);
+	raw.c_oflag &= ~(OPOST);
+	raw.c_cflag |= (CS8);
+	raw.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG);
 	raw.c_cc[VMIN] = 0;
 	raw.c_cc[VTIME] = 1;
-	
-	if( tcsetattr( STDIN_FILENO, TCSAFLUSH, &raw ) == -1 ) die( "tcsetattr" );  
+	if(tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw) == -1) die("enable_raw tcsetattr");
+}
+
+void ab_append(struct abuf *ab, const char *s, int len) {
+	char *new = realloc(ab-> b, ab -> len + len);
+	if(new == NULL) return;
+	memcpy(&new[ab->len], s, len);
+	ab -> b = new;
+	ab -> len += len;
+}
+
+void ab_free(struct abuf *ab) {
+	free(ab -> b);
+}
+
+void free_row(erow *row) {
+	free(row -> render);
+	free(row -> chars);
+}
+
+void del_row(int at) {
+	if( at < 0 || at >= E.numrows ) return;
+	free_row(&E.row[at]);
+	memmove(&E.row[at], &E.row[at + 1], sizeof(erow) * (E.numrows - at - 1));
+	E.numrows--;
+	E.dirty++;
 }

@@ -1,6 +1,7 @@
 {
     "files.associations": {
-        "ctype.h": "c"
+        "ctype.h": "c",
+        "termios.h": "c"
     },
     "C_Cpp.errorSquiggles": "Disabled"
 }
