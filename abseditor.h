@@ -12,9 +12,9 @@
 #include <unistd.h>
 #include <time.h>
 
-#define ABS_TAB_STOP 8
-#define C_KEY(k) (( k ) & 0x1f)
-#define ABS_VERSION "0.0.1"
+#define TAB_STOP 8
+#define C_KEY(k) ((k) & 0x1f)
+#define ABSEDIT_VERSION "0.0.2"
 // editor key (non insertion keys)
 enum editor_key {
 	BACKSPACE = 127,

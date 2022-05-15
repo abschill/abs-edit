@@ -10,13 +10,12 @@ int read_key() {
 
 	if(c == '\x1b') {
 		char seq[3];
-
 		if(read( STDIN_FILENO, &seq[0], 1 ) != 1) return '\x1b';
 		if(read( STDIN_FILENO, &seq[1], 1 ) != 1) return '\x1b';
 
 		if(seq[0] == '[') {
 			if(seq[1] >= '0' && seq[1] <= '9') {
-				if(read( STDIN_FILENO, &seq[2], 1 ) != 1) return '\x1b';
+				if(read(STDIN_FILENO, &seq[2], 1) != 1) return '\x1b';
 				if(seq[2] == '~' ) {
 					switch(seq[1]) {
 						case '1': return HOME_KEY;
@@ -27,7 +26,6 @@ int read_key() {
 						case '7': return HOME_KEY;
 						case '8': return END_KEY;
 					}
-
 				}
 				else {
 					switch(seq[1]) {
@@ -48,7 +46,7 @@ int read_key() {
 			}
 			return '\x1b';
 		}
-		}
+	}
 	else {
 		return c;
 	}
@@ -92,7 +90,7 @@ int r_cx_to_rx(erow *row, int cx) {
 
 	for(j = 0; j < cx; j++) {
 		if(row -> chars[j] == '\t') {
-			rx += (ABS_TAB_STOP - 1 ) - (rx % ABS_TAB_STOP);
+			rx += (TAB_STOP - 1) - (rx % TAB_STOP);
 		}
 		rx++;
 	}
@@ -104,7 +102,7 @@ int r_rx_to_cx(erow *row, int rx) {
 	int cx;
 	for(cx = 0; cx < row -> size; cx++) {
 		if(row -> chars[cx] == '\t') {
-			cur_rx += (ABS_TAB_STOP - 1) - (cur_rx % ABS_TAB_STOP);
+			cur_rx += (TAB_STOP - 1) - (cur_rx % TAB_STOP);
 		}
 		cur_rx++;
 		if(cur_rx > rx) return cx;
@@ -123,13 +121,13 @@ void update_erow(erow *row) {
 
 	free( row -> render);
 
-	row -> render = malloc(row -> size + tabs * (ABS_TAB_STOP - 1) + 1);
+	row -> render = malloc(row -> size + tabs * (TAB_STOP - 1) + 1);
 
 	int idx = 0;
 	for(j = 0; j < row -> size; j++) {
 		if(row -> chars[j] == '\t') {
 			row -> render[idx++] = ' ';
-			while(idx % ABS_TAB_STOP != 0) row -> render[idx++] = ' ';
+			while(idx % TAB_STOP != 0) row -> render[idx++] = ' ';
 		}
 		else {
 			row -> render[idx++] = row -> chars[j];
@@ -371,7 +369,7 @@ void draw_rows(struct abuf *ab) {
 		if(filerow >= E.numrows) {
 			if( E.numrows == 0 && y == E.screenrows / 3 ) {
 				char welcome[80];
-				int welcomelen = snprintf(welcome, sizeof(welcome), "Abs Editor -- version %s", ABS_VERSION);
+				int welcomelen = snprintf(welcome, sizeof(welcome), "Abs Editor -- version %s", ABSEDIT_VERSION);
 				if(welcomelen > E.screencols) welcomelen = E.screencols;
 				int padding = (E.screencols - welcomelen) / 2;
 				if(padding) {
